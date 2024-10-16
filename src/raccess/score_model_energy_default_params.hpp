@@ -2,6 +2,27 @@
  * author: hisanori kiryu
  * score_model_energy_default_params.hpp
  * taken from vienna rna package version 1.8.5
+ * You must follow the license of the vienna rna package described below
+ * when you use it.
+ *                       Disclaimer and Copyright
+ * 
+ * The programs, library and source code of the Vienna RNA Package are free
+ * software. They are distributed in the hope that they will be useful
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ *
+ * Permission is granted for research, educational, and commercial use
+ * and modification so long as 1) the package and any derived works are not
+ * redistributed for any fee, other than media costs, 2) proper credit is
+ * given to the authors and the Institute for Theoretical Chemistry of the
+ * University of Vienna.
+ *
+ * If you want to include this software in a commercial product, please contact
+ * the authors.
+ *
+ * Note that the file ./lib/naview.c has its own copyright attached.
+ * The ./Readseq/ directory contains a modified version of Don Gilbert's
+ * public domain readseq program.
  */
 #ifndef RACCESS__SCORE_MODEL_ENERGY_DEFAULT_PARAMS_HPP
 #define RACCESS__SCORE_MODEL_ENERGY_DEFAULT_PARAMS_HPP
