@@ -1,0 +1,4 @@
+src/raccess/run_raccess
+src/raccess/run_raccess.o
+src/raccess/run_raccess_contrafold
+src/raccess/run_raccess_contrafold.o
