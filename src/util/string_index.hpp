@@ -8,7 +8,7 @@
 #include <vector>
 #include <utility>
 #include <algorithm>
-#include <ext/hash_map>
+#include <unordered_map>
 template <typename T> class OSet {
 public:
   typedef T                                       value_type;
@@ -19,7 +19,7 @@ public:
   typedef std::size_t                             size_type;
   typedef std::ptrdiff_t                          difference_type;
 private:
-  typedef __gnu_cxx::hash_map<value_type, difference_type> Hash;
+  typedef std::unordered_map<value_type, difference_type> Hash;
   typedef std::vector<value_type> Vector;
   Hash   _h;
   Vector _v;

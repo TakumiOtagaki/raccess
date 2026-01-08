@@ -36,23 +36,16 @@
 #include <unistd.h>
 #include <errno.h>
 using namespace std;
-using namespace __gnu_cxx;
 
-#include <ext/hash_map>
-#include <ext/hash_set>
-// for hash_map<string,*>
-namespace __gnu_cxx {
-  template< typename CharT, typename Traits, typename Alloc >
-  struct hash< const std::basic_string<CharT, Traits, Alloc> > {
-    std::size_t operator()(const std::basic_string<CharT, Traits, Alloc>& s) const {
-      const std::collate<CharT>& c = std::use_facet<std::collate<CharT> >(std::locale());
-      return c.hash(s.c_str(), s.c_str() + s.length());
-    }
-  };
-  template< typename CharT, typename Traits, typename Alloc >
-  struct hash< std::basic_string<CharT, Traits, Alloc> >
-    : hash< const std::basic_string<CharT, Traits, Alloc> > {};
-}
+#include <unordered_map>
+#include <unordered_set>
+template <typename K, typename V, typename H = std::hash<K>,
+          typename Eq = std::equal_to<K>,
+          typename A = std::allocator<std::pair<const K, V> > >
+using hash_map = std::unordered_map<K, V, H, Eq, A>;
+template <typename K, typename H = std::hash<K>, typename Eq = std::equal_to<K>,
+          typename A = std::allocator<K> >
+using hash_set = std::unordered_set<K, H, Eq, A>;
 
 #include "error.hpp"
 #include "array.hpp"
