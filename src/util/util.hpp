@@ -1305,7 +1305,7 @@ template <typename V, typename V1> void permute_inplace(V& v, V1 const& perm) {
   for (int i = 0; i < (int)v.size(); ++i) {
     for (int j = perm[i];; j = perm[j]) {
       if (j < i) continue;
-      if (j = i) break;
+      if (j == i) break;
       swap(v[i], v[j]);
       break;
     }
