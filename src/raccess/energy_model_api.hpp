@@ -12,6 +12,8 @@ public:
   typedef SM::Seq Seq;
   explicit EnergyModelApi(SM& sm) : _sm(&sm) {}
   void initialize() { _sm->initialize(); }
+  // NOTE: ScoreModelEnergy pads sequence at both ends (1-based indexing).
+  // Indices i,j are interpreted in Raccess coordinates and are not raw 0-based.
   void set_seq(const Seq& seq) { _sm->set_seq(seq); }
   IntT seqlen() const { return _sm->seqlen(); }
   IntT max_loop() const { return SM::MAXLOOP; }
