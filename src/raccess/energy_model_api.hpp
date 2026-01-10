@@ -24,7 +24,14 @@ public:
   // Log Boltzmann factors.
   ScoreT log_boltz_stack(IntT i, IntT j) const { return _sm->score_stack(i, j); }
   ScoreT log_boltz_stem_close(IntT i, IntT j) const { return _sm->score_stem_close(i, j); }
+
+  // Hairpin: i and j are inner loop bounds in DP coordinates.
+  // Closing pair is (i-1, j+1) in DP, which maps to seq(i) and seq(j+1) after padding.
   ScoreT log_boltz_hairpin(IntT i, IntT j) const { return _sm->score_hairpin(i, j); }
+  
+  // Interior/bulge: (i-1, j+1) closes the outer pair, (ip, jp) closes the inner pair in DP.
+  // Example (1-origin, Raccess coords): outer (1,10), inner (2,8) bulge length 1:
+  // log_boltz_interior(2, 9, 2, 8).
   ScoreT log_boltz_interior(IntT i, IntT j, IntT ip, IntT jp) const {
     return _sm->score_interior(i, j, ip, jp);
   }
