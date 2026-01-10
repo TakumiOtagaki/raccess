@@ -26,6 +26,14 @@ public:
   ScoreT log_boltz_interior(IntT i, IntT j, IntT ip, IntT jp) const {
     return _sm->score_interior(i, j, ip, jp);
   }
+  ScoreT log_boltz_loop(IntT i, IntT j, IntT p, IntT q) const {
+    // LinearCapR energy_loop equivalent (stack/bulge/internal).
+    // stack: no unpaired bases between (i,j) and (p,q)
+    if ((p == (i + 1)) && (q == (j - 1))) {
+      return _sm->score_stack(i, j);
+    }
+    return _sm->score_interior(i, j, p, q);
+  }
   ScoreT log_boltz_multi_close(IntT i, IntT j) const { return _sm->score_multi_close(i, j); }
   ScoreT log_boltz_multi_open(IntT i, IntT j) const { return _sm->score_multi_open(i, j); }
   ScoreT log_boltz_multi_extend(IntT i, IntT j) const { return _sm->score_multi_extend(i, j); }
@@ -37,6 +45,9 @@ public:
   ScoreT boltz_hairpin(IntT i, IntT j) const { return EXP(log_boltz_hairpin(i, j)); }
   ScoreT boltz_interior(IntT i, IntT j, IntT ip, IntT jp) const {
     return EXP(log_boltz_interior(i, j, ip, jp));
+  }
+  ScoreT boltz_loop(IntT i, IntT j, IntT p, IntT q) const {
+    return EXP(log_boltz_loop(i, j, p, q));
   }
   ScoreT boltz_multi_close(IntT i, IntT j) const { return EXP(log_boltz_multi_close(i, j)); }
   ScoreT boltz_multi_open(IntT i, IntT j) const { return EXP(log_boltz_multi_open(i, j)); }
