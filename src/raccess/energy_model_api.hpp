@@ -22,6 +22,7 @@ public:
   ScoreT energy_to_score(ScoreT energy) const { return _sm->energy_to_score(energy); }
   ScoreT score_to_energy(ScoreT score) const { return _sm->score_to_energy(score); }
   // Log Boltzmann factors.
+  // Stack: uses pairs (i+1, j) and (i+2, j-1) in padded seq coordinates.
   ScoreT log_boltz_stack(IntT i, IntT j) const { return _sm->score_stack(i, j); }
   ScoreT log_boltz_stem_close(IntT i, IntT j) const { return _sm->score_stem_close(i, j); }
 
