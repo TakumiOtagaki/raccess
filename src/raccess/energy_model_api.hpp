@@ -14,6 +14,9 @@ public:
   void initialize() { _sm->initialize(); }
   void set_seq(const Seq& seq) { _sm->set_seq(seq); }
   IntT seqlen() const { return _sm->seqlen(); }
+  IntT max_loop() const { return SM::MAXLOOP; }
+  IntT min_hairpin() const { return SM::MINHPIN; }
+  ScoreT rt_kcal_mol() const { return SM::RT_KCAL_MOL(); }
   ScoreT energy_to_score(ScoreT energy) const { return _sm->energy_to_score(energy); }
   ScoreT score_to_energy(ScoreT score) const { return _sm->score_to_energy(score); }
   // Log Boltzmann factors.
