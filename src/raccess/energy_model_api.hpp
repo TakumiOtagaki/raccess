@@ -22,7 +22,8 @@ public:
   ScoreT energy_to_score(ScoreT energy) const { return _sm->energy_to_score(energy); }
   ScoreT score_to_energy(ScoreT score) const { return _sm->score_to_energy(score); }
   // Log Boltzmann factors.
-  // Stack: uses pairs (i+1, j) and (i+2, j-1) in padded seq coordinates.
+  // Stack: in DP coords this is the stack between pairs (i, j) and (i+1, j-1).
+  // In padded seq coordinates it corresponds to (i+1, j) and (i+2, j-1).
   ScoreT log_boltz_stack(IntT i, IntT j) const { return _sm->score_stack(i, j); }
   ScoreT log_boltz_stem_close(IntT i, IntT j) const { return _sm->score_stem_close(i, j); }
 
@@ -31,7 +32,7 @@ public:
   ScoreT log_boltz_hairpin(IntT i, IntT j) const { return _sm->score_hairpin(i, j); }
   
   // Interior/bulge: (i-1, j+1) closes the outer pair, (ip, jp) closes the inner pair in DP.
-  // Example (1-origin, Raccess coords): outer (1,10), inner (2,8) bulge length 1:
+  // Example (1-origin, DP coords): outer (1,10), inner (2,8) bulge length 1:
   // log_boltz_interior(2, 9, 2, 8).
   ScoreT log_boltz_interior(IntT i, IntT j, IntT ip, IntT jp) const {
     return _sm->score_interior(i, j, ip, jp);
@@ -64,6 +65,42 @@ public:
   ScoreT boltz_multi_extend(IntT i, IntT j) const { return EXP(log_boltz_multi_extend(i, j)); }
   ScoreT boltz_outer_extend(IntT i, IntT j) const { return EXP(log_boltz_outer_extend(i, j)); }
   ScoreT boltz_outer_branch(IntT i, IntT j) const { return EXP(log_boltz_outer_branch(i, j)); }
+
+  // Closed-pair wrappers (accept closing pairs in "1-origin" "closed coordinates").
+  // These avoid manual padding/half-open adjustments in callers.
+
+  // Hairpin: (a, b) closes the hairpin
+  ScoreT log_boltz_hairpin_closed(IntT a, IntT b) const {
+    return log_boltz_hairpin(a + 1, b - 1);
+  }
+
+  // 
+  ScoreT boltz_hairpin_closed(IntT a, IntT b) const {
+    return EXP(log_boltz_hairpin_closed(a, b));
+  }
+  ScoreT log_boltz_stack_closed(IntT a, IntT b) const {
+    return log_boltz_stack(a, b + 1);
+  }
+  ScoreT boltz_stack_closed(IntT a, IntT b) const {
+    return EXP(log_boltz_stack_closed(a, b));
+  }
+  ScoreT log_boltz_interior_closed(IntT a, IntT b, IntT c, IntT d) const {
+    // outer pair (a,b), inner pair (c,d) with a < c < d < b
+    return log_boltz_interior(a + 1, b - 1, c, d);
+  }
+  ScoreT boltz_interior_closed(IntT a, IntT b, IntT c, IntT d) const {
+    return EXP(log_boltz_interior_closed(a, b, c, d));
+  }
+  ScoreT log_boltz_loop_closed(IntT a, IntT b, IntT c, IntT d) const {
+    // LinearCapR energy_loop equivalent in closed coordinates.
+    if ((c == (a + 1)) && (d == (b - 1))) {
+      return log_boltz_stack_closed(a, b);
+    }
+    return log_boltz_interior_closed(a, b, c, d);
+  }
+  ScoreT boltz_loop_closed(IntT a, IntT b, IntT c, IntT d) const {
+    return EXP(log_boltz_loop_closed(a, b, c, d));
+  }
 private:
   SM* _sm;
 };
