@@ -79,7 +79,7 @@ public:
     return EXP(log_boltz_hairpin_closed(a, b));
   }
   ScoreT log_boltz_stack_closed(IntT a, IntT b) const {
-    return log_boltz_stack(a, b + 1);
+    return log_boltz_stack(a - 1, b);
   }
   ScoreT boltz_stack_closed(IntT a, IntT b) const {
     return EXP(log_boltz_stack_closed(a, b));
