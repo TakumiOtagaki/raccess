@@ -101,6 +101,28 @@ public:
   ScoreT boltz_loop_closed(IntT a, IntT b, IntT c, IntT d) const {
     return EXP(log_boltz_loop_closed(a, b, c, d));
   }
+
+  // Multiloop/external wrappers (accept closing pairs in "1-origin" closed coordinates).
+  // - multi_close uses inner bounds, like hairpin/interior.
+  // - multi_open/outer_branch use paired coordinates (pair = (i+1, j) in padded seq).
+  ScoreT log_boltz_multi_close_closed(IntT a, IntT b) const {
+    return log_boltz_multi_close(a + 1, b - 1);
+  }
+  ScoreT boltz_multi_close_closed(IntT a, IntT b) const {
+    return EXP(log_boltz_multi_close_closed(a, b));
+  }
+  ScoreT log_boltz_multi_open_closed(IntT a, IntT b) const {
+    return log_boltz_multi_open(a - 1, b);
+  }
+  ScoreT boltz_multi_open_closed(IntT a, IntT b) const {
+    return EXP(log_boltz_multi_open_closed(a, b));
+  }
+  ScoreT log_boltz_outer_branch_closed(IntT a, IntT b) const {
+    return log_boltz_outer_branch(a - 1, b);
+  }
+  ScoreT boltz_outer_branch_closed(IntT a, IntT b) const {
+    return EXP(log_boltz_outer_branch_closed(a, b));
+  }
 private:
   SM* _sm;
 };
