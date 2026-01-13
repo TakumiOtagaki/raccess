@@ -8,6 +8,7 @@
 #include "raccess/tri_matrix_index.hpp"
 #include "raccess/score.hpp"
 #include "raccess/dp_matrix.hpp"
+#include <cstdio>
 namespace Raccess { template <typename ScoreModel> class ProbModel;}
 template <typename ScoreModel> class Raccess::ProbModel {
 public:
@@ -275,6 +276,12 @@ public:
   IntT             _cur_prob_row;
   double           _prob_thr;
   double           _length_factor;
+  bool             _debug_loop_on;
+  IntT             _debug_outer_i;
+  IntT             _debug_outer_j;
+  IntT             _debug_inner_i;
+  IntT             _debug_inner_j;
+  IntT             _debug_loop_hits;
   FnForward        _fn_forward;
   FnInside<true>   _fn_inside_fwd;
   FnInside<false>  _fn_inside_bwd;
@@ -282,7 +289,9 @@ public:
   FnOutside<false> _fn_outside;
   FnProbForward    _fn_prob_forward;
   FnProbInside     _fn_prob_inside;
-  ProbModel() : _fn_forward(*this), _fn_inside_fwd(*this), _fn_inside_bwd(*this),
+  ProbModel() : _debug_loop_on(false), _debug_outer_i(-1), _debug_outer_j(-1),
+		_debug_inner_i(-1), _debug_inner_j(-1), _debug_loop_hits(0),
+		_fn_forward(*this), _fn_inside_fwd(*this), _fn_inside_bwd(*this),
 		_fn_backward(*this), _fn_outside(*this),
 		_fn_prob_forward(*this), _fn_prob_inside(*this) {}
   ScoreModel& sm() { return *_sm;}
@@ -290,6 +299,15 @@ public:
   void set_max_span(const IntT& z) { _max_span = z;}
   void set_prob_thr(double z) { _prob_thr = z;}
   void set_length_factor(double z) { _length_factor = z;}
+  void set_debug_loop(IntT outer_i, IntT outer_j, IntT inner_i, IntT inner_j) {
+    _debug_loop_on = true;
+    _debug_outer_i = outer_i;
+    _debug_outer_j = outer_j;
+    _debug_inner_i = inner_i;
+    _debug_inner_j = inner_j;
+    _debug_loop_hits = 0;
+  }
+  void clear_debug_loop() { _debug_loop_on = false; }
   void set_acc_lens(const VI& acc_lens) {
     _acc_lens = acc_lens;
     vsort(_acc_lens); Check(_acc_lens.size() > 0);
@@ -452,6 +470,35 @@ public:
     }
   }
   void add_prob(TrType t, IntT i, IntT j, IntT k, IntT l, ScoreT w) {
+    if (_debug_loop_on && t == SM::TR_E_I) {
+      const IntT outer_i = i - 2;
+      const IntT outer_j = j;
+      const IntT inner_i = k - 1;
+      const IntT inner_j = l - 1;
+      const bool match = (_debug_outer_i < 0 || outer_i == _debug_outer_i) &&
+                         (_debug_outer_j < 0 || outer_j == _debug_outer_j) &&
+                         (_debug_inner_i < 0 || inner_i == _debug_inner_i) &&
+                         (_debug_inner_j < 0 || inner_j == _debug_inner_j);
+      if (match) {
+        if (_debug_loop_hits < 5) {
+          const IntT li = k - i;
+          const IntT lj = j - l;
+          std::fprintf(stderr,
+                       "debug_loop hit: outer=(%lld,%lld) inner=(%lld,%lld) dp(i,j,k,l)=(%lld,%lld,%lld,%lld) li=%lld lj=%lld\n",
+                       static_cast<long long>(outer_i),
+                       static_cast<long long>(outer_j),
+                       static_cast<long long>(inner_i),
+                       static_cast<long long>(inner_j),
+                       static_cast<long long>(i),
+                       static_cast<long long>(j),
+                       static_cast<long long>(k),
+                       static_cast<long long>(l),
+                       static_cast<long long>(li),
+                       static_cast<long long>(lj));
+        }
+        _debug_loop_hits++;
+      }
+    }
     w = exp(w);
     switch (t) {
       //case SM::TR_S_S:break;

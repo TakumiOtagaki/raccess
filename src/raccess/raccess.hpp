@@ -86,7 +86,17 @@ public:
     _pm.set_prob_thr(exp(_sm.energy_to_score(_energy_thr)));
     _pm.set_length_factor(_length_factor);
     _pm.set_acc_lens(_access_len);
+    set_debug_loop_opt();
     set_bind_be();
+  }
+  void set_debug_loop_opt() {
+    if (_debug_loop.empty()) {
+      _pm.clear_debug_loop();
+      return;
+    }
+    const vector<IntT>& v = splitvt<IntT>(_debug_loop, ",;:");
+    Check(v.size() == 4);
+    _pm.set_debug_loop(v[0], v[1], v[2], v[3]);
   }
   void set_bind_be() {
     if (_bind_range == "none") {
@@ -145,6 +155,7 @@ public:
   opt_item(access_len      , VI    , "10,20,"             , "contiguous length over which the transcript is accesible") \
   opt_item(bind_range      , string, "none"           , "If set in format 'first:last', then for each segment of accessibility computation, the binding energy between the region [first, last] (in 1-based, inclusive-end, coordinate relative to the segment) with a complementary DNA/RNA fragment is calculated.") \
   opt_item(energy_thr      , double, "100"            , "only output the results below the specified energy threshold (unit: kcal/mol)") \
+  opt_item(debug_loop      , string, ""               , "debug TR_E_I loop: outer_i,outer_j,inner_i,inner_j (0-based, closed coords)") \
   opt_item_(length_factor   , double, "-0.541728723"   , "") \
   opt_item_(print_header    , bool  , "false"          , "") \
   opt_item_(bed_header      , bool  , "false"          , "") \
