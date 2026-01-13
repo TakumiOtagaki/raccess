@@ -86,7 +86,8 @@ public:
   }
   ScoreT log_boltz_interior_closed(IntT a, IntT b, IntT c, IntT d) const {
     // outer pair (a,b), inner pair (c,d) with a < c < d < b
-    return log_boltz_interior(a + 1, b - 1, c, d);
+    // Maps to dp(i,j,ip,jp)=(a, b-1, c-1, d) to align with score_interior_nuc().
+    return log_boltz_interior(a, b - 1, c - 1, d);
   }
   ScoreT boltz_interior_closed(IntT a, IntT b, IntT c, IntT d) const {
     return EXP(log_boltz_interior_closed(a, b, c, d));
