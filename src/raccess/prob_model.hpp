@@ -230,6 +230,26 @@ public:
 		       : _pm.inside_p(_pm.sm().layer_in(t.to(), _h), k, l));
       ScoreT dsc    = _pm.sm().tsc(type, i, j, k, l);
       ScoreT w      = (dsc + ((sc_in - _pm.partition_coeff()) + sc_out));
+      if (_pm._debug_m2_on && type == SM::TR_M2_S) {
+        const IntT lo_edge = _pm._debug_m2_range_lo - 1;
+        const IntT hi_edge = _pm._debug_m2_range_hi + 1;
+        const bool range_match = (!_pm._debug_m2_range_on) ||
+                                 (i <= hi_edge && j >= lo_edge);
+        if (range_match && possible(sc_out) && possible(sc_in)) {
+          if (_pm._debug_m2s_hits < _pm._debug_m2s_max_hits) {
+            std::fprintf(stderr,
+                         "debug_m2s: pair=(%lld,%lld) logw=%e sc_in=%e sc_out=%e dsc=%e w=%e\n",
+                         static_cast<long long>(i),
+                         static_cast<long long>(j),
+                         static_cast<double>(w),
+                         static_cast<double>(sc_in),
+                         static_cast<double>(sc_out),
+                         static_cast<double>(dsc),
+                         static_cast<double>(exp(w)));
+          }
+          _pm._debug_m2s_hits++;
+        }
+      }
       if (_pm._debug_m2_on && type == SM::TR_M2_M2) {
         const IntT unp_b = l;
         const IntT unp_e = (j - 1);
@@ -317,6 +337,8 @@ public:
   bool             _debug_m2_range_on;
   IntT             _debug_m2_range_lo;
   IntT             _debug_m2_range_hi;
+  IntT             _debug_m2s_hits;
+  IntT             _debug_m2s_max_hits;
   FnForward        _fn_forward;
   FnInside<true>   _fn_inside_fwd;
   FnInside<false>  _fn_inside_bwd;
@@ -329,6 +351,7 @@ public:
 		_debug_m2_on(false), _debug_m2_pos(-1), _debug_m2_hits(0),
 		_debug_m2_max_hits(200), _debug_m2_range_on(false),
 		_debug_m2_range_lo(0), _debug_m2_range_hi(0),
+		_debug_m2s_hits(0), _debug_m2s_max_hits(200),
 		_fn_forward(*this), _fn_inside_fwd(*this), _fn_inside_bwd(*this),
 		_fn_backward(*this), _fn_outside(*this),
 		_fn_prob_forward(*this), _fn_prob_inside(*this) {}
@@ -351,8 +374,13 @@ public:
     _debug_m2_pos = pos;
     _debug_m2_hits = 0;
     _debug_m2_max_hits = max_hits;
+    _debug_m2s_hits = 0;
+    _debug_m2s_max_hits = max_hits;
   }
-  void set_debug_m2_max_hits(IntT max_hits) { _debug_m2_max_hits = max_hits; }
+  void set_debug_m2_max_hits(IntT max_hits) {
+    _debug_m2_max_hits = max_hits;
+    _debug_m2s_max_hits = max_hits;
+  }
   void set_debug_m2_range(IntT lo, IntT hi) {
     _debug_m2_range_on = true;
     _debug_m2_range_lo = lo;
@@ -786,6 +814,31 @@ public:
   template <typename Fn> void prob_inside_transitions(Fn& f, IntT i, IntT j) {
     f.before_transition(i, j);
     if ((i + _acc_lmin <= j) && 0 < i && j < _seqlen) {
+      if (_debug_m2_on && (i + 2 <= j) && allow_pair(i, j)) {
+        const Transition& t = _sm->transitions(SM::TR_M2_S);
+        ScoreT sc_out = _cur_sc[t.from()];
+        ScoreT sc_in  = inside_p(_sm->layer_in(t.to(), SM::OT_NONE), i, j);
+        ScoreT dsc    = _sm->tsc(SM::TR_M2_S, i, j, i, j);
+        const IntT lo_edge = _debug_m2_range_lo - 1;
+        const IntT hi_edge = _debug_m2_range_hi + 1;
+        const bool range_match = (!_debug_m2_range_on) ||
+                                 (i <= hi_edge && j >= lo_edge);
+        if (range_match && possible(sc_out) && possible(sc_in)) {
+          ScoreT w = (dsc + ((sc_in - _partition_coeff) + sc_out));
+          if (_debug_m2s_hits < _debug_m2s_max_hits) {
+            std::fprintf(stderr,
+                         "debug_m2s: pair=(%lld,%lld) logw=%e sc_in=%e sc_out=%e dsc=%e w=%e\n",
+                         static_cast<long long>(i),
+                         static_cast<long long>(j),
+                         static_cast<double>(w),
+                         static_cast<double>(sc_in),
+                         static_cast<double>(sc_out),
+                         static_cast<double>(dsc),
+                         static_cast<double>(exp(w)));
+          }
+          _debug_m2s_hits++;
+        }
+      }
       //Multi2->
       //->Multi2
       for (IntT u = 0; u < (IntT)_acc_lens.size(); ++u) {
