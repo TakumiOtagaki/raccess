@@ -64,6 +64,28 @@ public:
 	      : _pm.inside_p(_pm.sm().layer_in(t.to(), _h), k, l));
 	sc += _pm.sm().tsc(type, i, j, k, l);
       }
+      if (fwd && _pm._debug_m2_cell_on && t.from() == SM::MULTI2) {
+        if (i == _pm._debug_m2_cell_i && j == _pm._debug_m2_cell_j) {
+          if (_pm._debug_m2_cell_hits < _pm._debug_m2_cell_max_hits) {
+            ScoreT sc_base = (t.bf() ? sc : (t.refer_cur_sc()
+                                 ? _pm.cur_sc(t.to())
+                                 : _pm.inside_p(_pm.sm().layer_in(t.to(), _h), k, l)));
+            ScoreT dsc = _pm.sm().tsc(type, i, j, k, l);
+            std::fprintf(stderr,
+                         "debug_m2_cell_in: dp(i,j,k,l)=(%lld,%lld,%lld,%lld) type=%s bf=%d base=%e dsc=%e sc=%e\n",
+                         static_cast<long long>(i),
+                         static_cast<long long>(j),
+                         static_cast<long long>(k),
+                         static_cast<long long>(l),
+                         t.name().c_str(),
+                         static_cast<int>(t.bf()),
+                         static_cast<double>(sc_base),
+                         static_cast<double>(dsc),
+                         static_cast<double>(sc));
+          }
+          _pm._debug_m2_cell_hits++;
+        }
+      }
       LOGADD(_pm.cur_sc(t.from()), sc);
     }
   };
@@ -230,6 +252,25 @@ public:
 		       : _pm.inside_p(_pm.sm().layer_in(t.to(), _h), k, l));
       ScoreT dsc    = _pm.sm().tsc(type, i, j, k, l);
       ScoreT w      = (dsc + ((sc_in - _pm.partition_coeff()) + sc_out));
+      if (_pm._debug_m2_cell_on && t.from() == SM::MULTI2) {
+        if (i == _pm._debug_m2_cell_i && j == _pm._debug_m2_cell_j) {
+          if (_pm._debug_m2_cell_hits < _pm._debug_m2_cell_max_hits) {
+            std::fprintf(stderr,
+                         "debug_m2_cell: dp(i,j,k,l)=(%lld,%lld,%lld,%lld) type=%s logw=%e sc_in=%e sc_out=%e dsc=%e w=%e\n",
+                         static_cast<long long>(i),
+                         static_cast<long long>(j),
+                         static_cast<long long>(k),
+                         static_cast<long long>(l),
+                         t.name().c_str(),
+                         static_cast<double>(w),
+                         static_cast<double>(sc_in),
+                         static_cast<double>(sc_out),
+                         static_cast<double>(dsc),
+                         static_cast<double>(exp(w)));
+          }
+          _pm._debug_m2_cell_hits++;
+        }
+      }
       if (_pm._debug_m2_on && type == SM::TR_M2_S) {
         const IntT lo_edge = _pm._debug_m2_range_lo - 1;
         const IntT hi_edge = _pm._debug_m2_range_hi + 1;
@@ -260,8 +301,17 @@ public:
                                   unp_e <= _pm._debug_m2_range_hi);
         if (match && range_match && possible(sc_out) && possible(sc_in)) {
           if (_pm._debug_m2_hits < _pm._debug_m2_max_hits) {
+            // LinCapR の M2 (j,q,k) に対応させると j=i, q=l-1, k=j-1 となる。
+            const IntT lin_j = i;
+            const IntT lin_q = (l - 1);
+            const IntT lin_k = (j - 1);
+            const IntT lin_unp_b = (lin_q + 1);
+            const IntT lin_unp_e = lin_k;
+            const IntT lin_unp_len = (lin_k - lin_q);
             std::fprintf(stderr,
-                         "debug_m2: dp(i,j,k,l)=(%lld,%lld,%lld,%lld) unpaired=(%lld,%lld) len=%lld logw=%e sc_in=%e sc_out=%e dsc=%e w=%e\n",
+                         "debug_m2: dp(i,j,k,l)=(%lld,%lld,%lld,%lld) unpaired=(%lld,%lld) len=%lld "
+                         "lin=(%lld,%lld,%lld) lin_unpaired=(%lld,%lld) len_lin=%lld "
+                         "logw=%e sc_in=%e sc_out=%e dsc=%e w=%e\n",
                          static_cast<long long>(i),
                          static_cast<long long>(j),
                          static_cast<long long>(k),
@@ -269,6 +319,12 @@ public:
                          static_cast<long long>(unp_b),
                          static_cast<long long>(unp_e),
                          static_cast<long long>(j - l),
+                         static_cast<long long>(lin_j),
+                         static_cast<long long>(lin_q),
+                         static_cast<long long>(lin_k),
+                         static_cast<long long>(lin_unp_b),
+                         static_cast<long long>(lin_unp_e),
+                         static_cast<long long>(lin_unp_len),
                          static_cast<double>(w),
                          static_cast<double>(sc_in),
                          static_cast<double>(sc_out),
@@ -339,6 +395,11 @@ public:
   IntT             _debug_m2_range_hi;
   IntT             _debug_m2s_hits;
   IntT             _debug_m2s_max_hits;
+  bool             _debug_m2_cell_on;
+  IntT             _debug_m2_cell_i;
+  IntT             _debug_m2_cell_j;
+  IntT             _debug_m2_cell_hits;
+  IntT             _debug_m2_cell_max_hits;
   FnForward        _fn_forward;
   FnInside<true>   _fn_inside_fwd;
   FnInside<false>  _fn_inside_bwd;
@@ -352,6 +413,8 @@ public:
 		_debug_m2_max_hits(200), _debug_m2_range_on(false),
 		_debug_m2_range_lo(0), _debug_m2_range_hi(0),
 		_debug_m2s_hits(0), _debug_m2s_max_hits(200),
+		_debug_m2_cell_on(false), _debug_m2_cell_i(0), _debug_m2_cell_j(0),
+		_debug_m2_cell_hits(0), _debug_m2_cell_max_hits(200),
 		_fn_forward(*this), _fn_inside_fwd(*this), _fn_inside_bwd(*this),
 		_fn_backward(*this), _fn_outside(*this),
 		_fn_prob_forward(*this), _fn_prob_inside(*this) {}
@@ -380,6 +443,7 @@ public:
   void set_debug_m2_max_hits(IntT max_hits) {
     _debug_m2_max_hits = max_hits;
     _debug_m2s_max_hits = max_hits;
+    _debug_m2_cell_max_hits = max_hits;
   }
   void set_debug_m2_range(IntT lo, IntT hi) {
     _debug_m2_range_on = true;
@@ -388,6 +452,14 @@ public:
   }
   void clear_debug_m2() { _debug_m2_on = false; }
   void clear_debug_m2_range() { _debug_m2_range_on = false; }
+  void set_debug_m2_cell(IntT i, IntT j, IntT max_hits = 200) {
+    _debug_m2_cell_on = true;
+    _debug_m2_cell_i = i;
+    _debug_m2_cell_j = j;
+    _debug_m2_cell_hits = 0;
+    _debug_m2_cell_max_hits = max_hits;
+  }
+  void clear_debug_m2_cell() { _debug_m2_cell_on = false; }
   void set_acc_lens(const VI& acc_lens) {
     _acc_lens = acc_lens;
     vsort(_acc_lens); Check(_acc_lens.size() > 0);

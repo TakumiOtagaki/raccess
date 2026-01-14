@@ -103,15 +103,22 @@ public:
     if (_debug_m2_pos < 0) {
       _pm.clear_debug_m2();
       _pm.clear_debug_m2_range();
-      return;
-    }
-    _pm.set_debug_m2_pos(_debug_m2_pos, _debug_m2_max_hits);
-    if (!_debug_m2_range.empty()) {
-      const vector<IntT>& v = splitvt<IntT>(_debug_m2_range, ",;:");
-      Check(v.size() == 2);
-      _pm.set_debug_m2_range(v[0], v[1]);
     } else {
-      _pm.clear_debug_m2_range();
+      _pm.set_debug_m2_pos(_debug_m2_pos, _debug_m2_max_hits);
+      if (!_debug_m2_range.empty()) {
+	const vector<IntT>& v = splitvt<IntT>(_debug_m2_range, ",;:");
+	Check(v.size() == 2);
+	_pm.set_debug_m2_range(v[0], v[1]);
+      } else {
+	_pm.clear_debug_m2_range();
+      }
+    }
+    if (!_debug_m2_cell.empty()) {
+      const vector<IntT>& v = splitvt<IntT>(_debug_m2_cell, ",;:");
+      Check(v.size() == 2);
+      _pm.set_debug_m2_cell(v[0], v[1], _debug_m2_max_hits);
+    } else {
+      _pm.clear_debug_m2_cell();
     }
   }
   void set_bind_be() {
@@ -174,6 +181,7 @@ public:
   opt_item(debug_loop      , string, ""               , "debug TR_E_I loop: outer_i,outer_j,inner_i,inner_j (0-based, closed coords)") \
   opt_item(debug_m2_pos    , IntT  , "-1"             , "debug TR_M2_M2 transitions for unpaired interval containing pos (0-based)") \
   opt_item(debug_m2_range  , string, ""               , "debug TR_M2_M2 unpaired overlap range lo,hi (0-based, closed coords)") \
+  opt_item(debug_m2_cell   , string, ""               , "debug MULTI2 state contributions at dp cell i,j (0-based, closed coords)") \
   opt_item(debug_m2_max_hits, IntT , "200"            , "max debug TR_M2_M2 log lines") \
   opt_item_(length_factor   , double, "-0.541728723"   , "") \
   opt_item_(print_header    , bool  , "false"          , "") \
