@@ -386,6 +386,10 @@ public:
   IntT             _debug_inner_i;
   IntT             _debug_inner_j;
   IntT             _debug_loop_hits;
+  bool             _debug_outer_on;
+  IntT             _debug_outer_pos;
+  IntT             _debug_outer_hits;
+  IntT             _debug_outer_max_hits;
   bool             _debug_m2_on;
   IntT             _debug_m2_pos;
   IntT             _debug_m2_hits;
@@ -409,6 +413,8 @@ public:
   FnProbInside     _fn_prob_inside;
   ProbModel() : _debug_loop_on(false), _debug_outer_i(-1), _debug_outer_j(-1),
 		_debug_inner_i(-1), _debug_inner_j(-1), _debug_loop_hits(0),
+		_debug_outer_on(false), _debug_outer_pos(-1), _debug_outer_hits(0),
+		_debug_outer_max_hits(200),
 		_debug_m2_on(false), _debug_m2_pos(-1), _debug_m2_hits(0),
 		_debug_m2_max_hits(200), _debug_m2_range_on(false),
 		_debug_m2_range_lo(0), _debug_m2_range_hi(0),
@@ -432,6 +438,13 @@ public:
     _debug_loop_hits = 0;
   }
   void clear_debug_loop() { _debug_loop_on = false; }
+  void set_debug_outer_pos(IntT pos, IntT max_hits = 200) {
+    _debug_outer_on = true;
+    _debug_outer_pos = pos;
+    _debug_outer_hits = 0;
+    _debug_outer_max_hits = max_hits;
+  }
+  void clear_debug_outer() { _debug_outer_on = false; }
   void set_debug_m2_pos(IntT pos, IntT max_hits = 200) {
     _debug_m2_on = true;
     _debug_m2_pos = pos;
@@ -685,7 +698,26 @@ public:
       // case SM::TR_IB_S:break;
       // case SM::TR_O_X:break;
       // case SM::TR_X_O:break;
-    case SM::TR_O_O: prob(l, l + _acc_len_id[j - l]) += w; break; 
+    case SM::TR_O_O:
+      if (_debug_outer_on) {
+        const IntT len = (j - l);
+        const bool pos_match = (l <= _debug_outer_pos && _debug_outer_pos < j);
+        if (pos_match && _debug_outer_hits < _debug_outer_max_hits) {
+          std::fprintf(stderr,
+                       "debug_outer: pos=%lld dp(i,j,k,l)=(%lld,%lld,%lld,%lld) len=%lld logw=%e w=%e\n",
+                       static_cast<long long>(_debug_outer_pos),
+                       static_cast<long long>(i),
+                       static_cast<long long>(j),
+                       static_cast<long long>(k),
+                       static_cast<long long>(l),
+                       static_cast<long long>(len),
+                       static_cast<double>(log(w)),
+                       static_cast<double>(w));
+          _debug_outer_hits++;
+        }
+      }
+      prob(l, l + _acc_len_id[j - l]) += w;
+      break; 
       // case SM::TR_O_IB:break;
       // case SM::TR_O_BF: case SM::TR_O_BFL: case SM::TR_O_BFR:break;
     default: Die("bad type %d", t); break;

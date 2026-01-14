@@ -87,6 +87,7 @@ public:
     _pm.set_length_factor(_length_factor);
     _pm.set_acc_lens(_access_len);
     set_debug_loop_opt();
+    set_debug_outer_opt();
     set_debug_m2_opt();
     set_bind_be();
   }
@@ -119,6 +120,13 @@ public:
       _pm.set_debug_m2_cell(v[0], v[1], _debug_m2_max_hits);
     } else {
       _pm.clear_debug_m2_cell();
+    }
+  }
+  void set_debug_outer_opt() {
+    if (_debug_outer_pos < 0) {
+      _pm.clear_debug_outer();
+    } else {
+      _pm.set_debug_outer_pos(_debug_outer_pos, _debug_outer_max_hits);
     }
   }
   void set_bind_be() {
@@ -179,10 +187,12 @@ public:
   opt_item(bind_range      , string, "none"           , "If set in format 'first:last', then for each segment of accessibility computation, the binding energy between the region [first, last] (in 1-based, inclusive-end, coordinate relative to the segment) with a complementary DNA/RNA fragment is calculated.") \
   opt_item(energy_thr      , double, "100"            , "only output the results below the specified energy threshold (unit: kcal/mol)") \
   opt_item(debug_loop      , string, ""               , "debug TR_E_I loop: outer_i,outer_j,inner_i,inner_j (0-based, closed coords)") \
+  opt_item(debug_outer_pos , IntT  , "-1"             , "debug TR_O_O contributions for unpaired intervals covering pos (0-based)") \
   opt_item(debug_m2_pos    , IntT  , "-1"             , "debug TR_M2_M2 transitions for unpaired interval containing pos (0-based)") \
   opt_item(debug_m2_range  , string, ""               , "debug TR_M2_M2 unpaired overlap range lo,hi (0-based, closed coords)") \
   opt_item(debug_m2_cell   , string, ""               , "debug MULTI2 state contributions at dp cell i,j (0-based, closed coords)") \
   opt_item(debug_m2_max_hits, IntT , "200"            , "max debug TR_M2_M2 log lines") \
+  opt_item(debug_outer_max_hits, IntT, "200"          , "max debug TR_O_O log lines") \
   opt_item_(length_factor   , double, "-0.541728723"   , "") \
   opt_item_(print_header    , bool  , "false"          , "") \
   opt_item_(bed_header      , bool  , "false"          , "") \
