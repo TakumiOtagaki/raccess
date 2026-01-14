@@ -71,7 +71,7 @@ public:
 
   // Hairpin: (a, b) closes the hairpin
   ScoreT log_boltz_hairpin_closed(IntT a, IntT b) const {
-    return log_boltz_hairpin(a + 1, b - 1);
+    return log_boltz_hairpin(a, b - 1);
   }
 
   // 
