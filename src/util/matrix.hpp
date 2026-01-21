@@ -80,6 +80,8 @@ public:
   int nrow() const {return _nrow;}
   int ncol() const {return _ncol;}
   const Data& data() const {return _data;}
+  reference front() {return _data.front();}
+  const_reference front() const {return _data.front();}
   void set_size(int nrow, int ncol) {
     Assert(nrow >= 0 && ncol >= 0);
     _data.resize(nrow * ncol);
