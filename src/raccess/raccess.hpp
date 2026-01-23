@@ -4,6 +4,7 @@
 #ifndef RACCESS__RACCESS_HPP
 #define RACCESS__RACCESS_HPP
 #include "util/util.hpp"
+#include <algorithm>
 #include <cctype>
 #include "raccess/score_model_energy.hpp"
 #include "raccess/prob_model.hpp"
@@ -89,9 +90,12 @@ public:
     _pm.set_acc_lens(_access_len);
     set_debug_loop_opt();
     set_debug_dp_opt();
+    set_debug_dp_dump_opt();
     set_debug_outer_opt();
+    set_debug_outer_dp_opt();
     set_debug_hairpin_opt();
     set_debug_m2_opt();
+    set_debug_se_cell_opt();
     set_bind_be();
   }
   void set_debug_loop_opt() {
@@ -122,6 +126,27 @@ public:
     const IntT j = stot<IntT>(v[2]);
     _pm.set_debug_dp(state, i, j);
   }
+  void set_debug_dp_dump_opt() {
+    if (_debug_dp_dump.empty()) {
+      _pm.clear_debug_dp_dump();
+      return;
+    }
+    const vector<string>& v = splitv(_debug_dp_dump, ",;:");
+    Check(v.size() == 5);
+    string key = v[0];
+    std::transform(key.begin(), key.end(), key.begin(), [](unsigned char c){ return (char)std::tolower(c); });
+    IntT state = (-1);
+    if (key == "stem" || key == "s") state = SM::STEM;
+    else if (key == "stem_end" || key == "stemend" || key == "se") state = SM::STEM_END;
+    else if (key == "inner_beg" || key == "innerbeg" || key == "ib") state = SM::INNER_BEG;
+    else if (key == "outer" || key == "o") state = SM::OUTER;
+    else state = stot<IntT>(key);
+    const IntT i0 = stot<IntT>(v[1]);
+    const IntT j0 = stot<IntT>(v[2]);
+    const IntT i1 = stot<IntT>(v[3]);
+    const IntT j1 = stot<IntT>(v[4]);
+    _pm.set_debug_dp_dump(state, i0, j0, i1, j1);
+  }
   void set_debug_m2_opt() {
     if (_debug_m2_pos < 0) {
       _pm.clear_debug_m2();
@@ -144,12 +169,30 @@ public:
       _pm.clear_debug_m2_cell();
     }
   }
+  void set_debug_se_cell_opt() {
+    if (_debug_se_cell.empty()) {
+      _pm.clear_debug_se_cell();
+      return;
+    }
+    const vector<IntT>& v = splitvt<IntT>(_debug_se_cell, ",;:");
+    Check(v.size() == 2);
+    _pm.set_debug_se_cell(v[0], v[1], _debug_m2_max_hits);
+  }
   void set_debug_outer_opt() {
     if (_debug_outer_pos < 0) {
       _pm.clear_debug_outer();
     } else {
       _pm.set_debug_outer_pos(_debug_outer_pos, _debug_outer_max_hits);
     }
+  }
+  void set_debug_outer_dp_opt() {
+    if (_debug_outer_dp.empty()) {
+      _pm.clear_debug_outer_dp();
+      return;
+    }
+    const vector<IntT>& v = splitvt<IntT>(_debug_outer_dp, ",;:");
+    Check(v.size() == 2);
+    _pm.set_debug_outer_dp(v[0], v[1]);
   }
   void set_debug_hairpin_opt() {
     if (_debug_hairpin_pos < 0) {
@@ -217,11 +260,14 @@ public:
   opt_item(energy_thr      , double, "100"            , "only output the results below the specified energy threshold (unit: kcal/mol)") \
   opt_item(debug_loop      , string, ""               , "debug TR_E_I loop: outer_i,outer_j,inner_i,inner_j (0-based, closed coords)") \
   opt_item(debug_dp        , string, ""               , "debug DP cell: state,i,j (state=STEM|STEM_END|INNER_BEG|OUTER or numeric)") \
+  opt_item(debug_dp_dump   , string, ""               , "debug DP table: state,i0,j0,i1,j1 (0-based dp coords)") \
   opt_item(debug_outer_pos , IntT  , "-1"             , "debug TR_O_O contributions for unpaired intervals covering pos (0-based)") \
+  opt_item(debug_outer_dp  , string, ""               , "debug OUTER dp table: i0,i1 (0-based dp index)") \
   opt_item(debug_hairpin_pos , IntT  , "-1"           , "debug TR_E_H contributions for unpaired intervals covering pos (0-based)") \
   opt_item(debug_m2_pos    , IntT  , "-1"             , "debug TR_M2_M2 transitions for unpaired interval containing pos (0-based)") \
   opt_item(debug_m2_range  , string, ""               , "debug TR_M2_M2 unpaired overlap range lo,hi (0-based, closed coords)") \
   opt_item(debug_m2_cell   , string, ""               , "debug MULTI2 state contributions at dp cell i,j (0-based, closed coords)") \
+  opt_item(debug_se_cell   , string, ""               , "debug STEM_END state contributions at dp cell i,j (0-based, closed coords)") \
   opt_item(debug_m2_max_hits, IntT , "200"            , "max debug TR_M2_M2 log lines") \
   opt_item(debug_outer_max_hits, IntT, "200"          , "max debug TR_O_O log lines") \
   opt_item(debug_hairpin_max_hits, IntT, "200"        , "max debug TR_E_H log lines") \

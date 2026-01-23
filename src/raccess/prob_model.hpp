@@ -86,6 +86,28 @@ public:
           _pm._debug_m2_cell_hits++;
         }
       }
+      if (fwd && _pm._debug_se_cell_on && t.from() == SM::STEM_END) {
+        if (i == _pm._debug_se_cell_i && j == _pm._debug_se_cell_j) {
+          if (_pm._debug_se_cell_hits < _pm._debug_se_cell_max_hits) {
+            ScoreT sc_base = (t.bf() ? sc : (t.refer_cur_sc()
+                                 ? _pm.cur_sc(t.to())
+                                 : _pm.inside_p(_pm.sm().layer_in(t.to(), _h), k, l)));
+            ScoreT dsc = _pm.sm().tsc(type, i, j, k, l);
+            std::fprintf(stderr,
+                         "debug_se_cell_in: dp(i,j,k,l)=(%lld,%lld,%lld,%lld) type=%s bf=%d base=%e dsc=%e sc=%e\n",
+                         static_cast<long long>(i),
+                         static_cast<long long>(j),
+                         static_cast<long long>(k),
+                         static_cast<long long>(l),
+                         t.name().c_str(),
+                         static_cast<int>(t.bf()),
+                         static_cast<double>(sc_base),
+                         static_cast<double>(dsc),
+                         static_cast<double>(sc));
+          }
+          _pm._debug_se_cell_hits++;
+        }
+      }
       LOGADD(_pm.cur_sc(t.from()), sc);
     }
   };
@@ -390,10 +412,19 @@ public:
   IntT             _debug_dp_state;
   IntT             _debug_dp_i;
   IntT             _debug_dp_j;
+  bool             _debug_dp_dump_on;
+  IntT             _debug_dp_dump_state;
+  IntT             _debug_dp_dump_i0;
+  IntT             _debug_dp_dump_i1;
+  IntT             _debug_dp_dump_j0;
+  IntT             _debug_dp_dump_j1;
   bool             _debug_outer_on;
   IntT             _debug_outer_pos;
   IntT             _debug_outer_hits;
   IntT             _debug_outer_max_hits;
+  bool             _debug_outer_dp_on;
+  IntT             _debug_outer_dp_i0;
+  IntT             _debug_outer_dp_i1;
   bool             _debug_hairpin_on;
   IntT             _debug_hairpin_pos;
   IntT             _debug_hairpin_hits;
@@ -412,6 +443,11 @@ public:
   IntT             _debug_m2_cell_j;
   IntT             _debug_m2_cell_hits;
   IntT             _debug_m2_cell_max_hits;
+  bool             _debug_se_cell_on;
+  IntT             _debug_se_cell_i;
+  IntT             _debug_se_cell_j;
+  IntT             _debug_se_cell_hits;
+  IntT             _debug_se_cell_max_hits;
   FnForward        _fn_forward;
   FnInside<true>   _fn_inside_fwd;
   FnInside<false>  _fn_inside_bwd;
@@ -422,8 +458,11 @@ public:
   ProbModel() : _debug_loop_on(false), _debug_outer_i(-1), _debug_outer_j(-1),
 		_debug_inner_i(-1), _debug_inner_j(-1), _debug_loop_hits(0),
 		_debug_dp_on(false), _debug_dp_state(-1), _debug_dp_i(-1), _debug_dp_j(-1),
+		_debug_dp_dump_on(false), _debug_dp_dump_state(-1),
+		_debug_dp_dump_i0(0), _debug_dp_dump_i1(0), _debug_dp_dump_j0(0), _debug_dp_dump_j1(0),
 		_debug_outer_on(false), _debug_outer_pos(-1), _debug_outer_hits(0),
 		_debug_outer_max_hits(200),
+		_debug_outer_dp_on(false), _debug_outer_dp_i0(0), _debug_outer_dp_i1(0),
 		_debug_hairpin_on(false), _debug_hairpin_pos(-1),
 		_debug_hairpin_hits(0), _debug_hairpin_max_hits(200),
 		_debug_m2_on(false), _debug_m2_pos(-1), _debug_m2_hits(0),
@@ -432,6 +471,8 @@ public:
 		_debug_m2s_hits(0), _debug_m2s_max_hits(200),
 		_debug_m2_cell_on(false), _debug_m2_cell_i(0), _debug_m2_cell_j(0),
 		_debug_m2_cell_hits(0), _debug_m2_cell_max_hits(200),
+		_debug_se_cell_on(false), _debug_se_cell_i(0), _debug_se_cell_j(0),
+		_debug_se_cell_hits(0), _debug_se_cell_max_hits(200),
 		_fn_forward(*this), _fn_inside_fwd(*this), _fn_inside_bwd(*this),
 		_fn_backward(*this), _fn_outside(*this),
 		_fn_prob_forward(*this), _fn_prob_inside(*this) {}
@@ -456,6 +497,15 @@ public:
     _debug_dp_j = j;
   }
   void clear_debug_dp() { _debug_dp_on = false; }
+  void set_debug_dp_dump(IntT state, IntT i0, IntT j0, IntT i1, IntT j1) {
+    _debug_dp_dump_on = true;
+    _debug_dp_dump_state = state;
+    _debug_dp_dump_i0 = i0;
+    _debug_dp_dump_j0 = j0;
+    _debug_dp_dump_i1 = i1;
+    _debug_dp_dump_j1 = j1;
+  }
+  void clear_debug_dp_dump() { _debug_dp_dump_on = false; }
   void set_debug_outer_pos(IntT pos, IntT max_hits = 200) {
     _debug_outer_on = true;
     _debug_outer_pos = pos;
@@ -463,6 +513,12 @@ public:
     _debug_outer_max_hits = max_hits;
   }
   void clear_debug_outer() { _debug_outer_on = false; }
+  void set_debug_outer_dp(IntT i0, IntT i1) {
+    _debug_outer_dp_on = true;
+    _debug_outer_dp_i0 = i0;
+    _debug_outer_dp_i1 = i1;
+  }
+  void clear_debug_outer_dp() { _debug_outer_dp_on = false; }
   void set_debug_hairpin_pos(IntT pos, IntT max_hits = 200) {
     _debug_hairpin_on = true;
     _debug_hairpin_pos = pos;
@@ -498,6 +554,14 @@ public:
     _debug_m2_cell_max_hits = max_hits;
   }
   void clear_debug_m2_cell() { _debug_m2_cell_on = false; }
+  void set_debug_se_cell(IntT i, IntT j, IntT max_hits = 200) {
+    _debug_se_cell_on = true;
+    _debug_se_cell_i = i;
+    _debug_se_cell_j = j;
+    _debug_se_cell_hits = 0;
+    _debug_se_cell_max_hits = max_hits;
+  }
+  void clear_debug_se_cell() { _debug_se_cell_on = false; }
   void set_acc_lens(const VI& acc_lens) {
     _acc_lens = acc_lens;
     vsort(_acc_lens); Check(_acc_lens.size() > 0);
@@ -587,6 +651,8 @@ public:
     Check(possible(_dp_score), "could not parse sequence");
     compute_backward(forward_transitions1, inside_transitions1, print_row);
     dump_debug_dp();
+    dump_debug_dp_table();
+    dump_debug_outer_dp();
   }
   void compute_forward() {
     _cur_sc.assign(_sm->nstate0(), 0);
@@ -827,12 +893,13 @@ public:
     const bool has_in = (layer_in >= 0 && in > NEG_INF() / 2);
     const bool has_out = (layer_out >= 0 && out > NEG_INF() / 2);
     const double logz = static_cast<double>(_partition_coeff);
+    const double out_norm = (has_out ? static_cast<double>(out - _partition_coeff) : 0.0);
     const double pair_prob = (has_in && has_out)
       ? std::exp(static_cast<double>(in + out - _partition_coeff))
       : 0.0;
     std::fprintf(stderr,
                  "debug_dp state=%lld dp(i,j)=(%lld,%lld) raw_pair=(%lld,%lld) "
-                 "bases=%c,%c layer_in=%lld layer_out=%lld inside=%e outside=%e logZ=%e pair_prob=%e\n",
+                 "bases=%c,%c layer_in=%lld layer_out=%lld inside=%e outside=%e logZ=%e out_norm=%e pair_prob=%e\n",
                  static_cast<long long>(state),
                  static_cast<long long>(i),
                  static_cast<long long>(j),
@@ -845,7 +912,57 @@ public:
                  static_cast<double>(in),
                  static_cast<double>(out),
                  logz,
+                 out_norm,
                  pair_prob);
+  }
+
+  void dump_debug_dp_table() {
+    if (!_debug_dp_dump_on) return;
+    const IntT state = _debug_dp_dump_state;
+    const IntT layer_in = _sm->layer_in(state, SM::OT_NONE);
+    const IntT layer_out = _sm->layer_out(state, SM::OT_NONE);
+    const IntT i0 = min(_debug_dp_dump_i0, _debug_dp_dump_i1);
+    const IntT i1 = max(_debug_dp_dump_i0, _debug_dp_dump_i1);
+    const IntT j0 = min(_debug_dp_dump_j0, _debug_dp_dump_j1);
+    const IntT j1 = max(_debug_dp_dump_j0, _debug_dp_dump_j1);
+    for (IntT i = i0; i <= i1; ++i) {
+      for (IntT j = max(i, j0); j <= j1; ++j) {
+        const ScoreT in = (layer_in >= 0 ? inside_p(layer_in, i, j) : NEG_INF());
+        const ScoreT out = (layer_out >= 0 ? outside_p(layer_out, i, j) : NEG_INF());
+        const double out_norm = (layer_out >= 0 ? static_cast<double>(out - _partition_coeff) : 0.0);
+        const IntT raw_i = i;
+        const IntT raw_j = j - 1;
+        std::fprintf(stderr,
+                     "debug_dp_dump state=%lld dp(i,j)=(%lld,%lld) raw_pair=(%lld,%lld) inside=%e outside=%e out_norm=%e\n",
+                     static_cast<long long>(state),
+                     static_cast<long long>(i),
+                     static_cast<long long>(j),
+                     static_cast<long long>(raw_i),
+                     static_cast<long long>(raw_j),
+                     static_cast<double>(in),
+                     static_cast<double>(out),
+                     out_norm);
+      }
+    }
+  }
+
+  void dump_debug_outer_dp() {
+    if (!_debug_outer_dp_on) return;
+    const IntT i0 = min(_debug_outer_dp_i0, _debug_outer_dp_i1);
+    const IntT i1 = max(_debug_outer_dp_i0, _debug_outer_dp_i1);
+    for (IntT i = i0; i <= i1; ++i) {
+      if (i < 0 || i > _seqlen) continue;
+      const ScoreT in = inside_o(i);
+      const ScoreT out = outside_o(i);
+      const double out_norm = static_cast<double>(out - _partition_coeff);
+      std::fprintf(stderr,
+                   "debug_outer_dp idx=%lld inside_o=%e outside_o=%e out_norm=%e logZ=%e\n",
+                   static_cast<long long>(i),
+                   static_cast<double>(in),
+                   static_cast<double>(out),
+                   out_norm,
+                   static_cast<double>(_partition_coeff));
+    }
   }
   template <typename Fn> void forward_transitions(Fn& f, IntT i, IntT j) {
     f.before_transition(i, j);
