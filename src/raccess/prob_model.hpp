@@ -386,6 +386,10 @@ public:
   IntT             _debug_inner_i;
   IntT             _debug_inner_j;
   IntT             _debug_loop_hits;
+  bool             _debug_dp_on;
+  IntT             _debug_dp_state;
+  IntT             _debug_dp_i;
+  IntT             _debug_dp_j;
   bool             _debug_outer_on;
   IntT             _debug_outer_pos;
   IntT             _debug_outer_hits;
@@ -417,6 +421,7 @@ public:
   FnProbInside     _fn_prob_inside;
   ProbModel() : _debug_loop_on(false), _debug_outer_i(-1), _debug_outer_j(-1),
 		_debug_inner_i(-1), _debug_inner_j(-1), _debug_loop_hits(0),
+		_debug_dp_on(false), _debug_dp_state(-1), _debug_dp_i(-1), _debug_dp_j(-1),
 		_debug_outer_on(false), _debug_outer_pos(-1), _debug_outer_hits(0),
 		_debug_outer_max_hits(200),
 		_debug_hairpin_on(false), _debug_hairpin_pos(-1),
@@ -444,6 +449,13 @@ public:
     _debug_loop_hits = 0;
   }
   void clear_debug_loop() { _debug_loop_on = false; }
+  void set_debug_dp(IntT state, IntT i, IntT j) {
+    _debug_dp_on = true;
+    _debug_dp_state = state;
+    _debug_dp_i = i;
+    _debug_dp_j = j;
+  }
+  void clear_debug_dp() { _debug_dp_on = false; }
   void set_debug_outer_pos(IntT pos, IntT max_hits = 200) {
     _debug_outer_on = true;
     _debug_outer_pos = pos;
@@ -574,6 +586,7 @@ public:
     compute_forward();
     Check(possible(_dp_score), "could not parse sequence");
     compute_backward(forward_transitions1, inside_transitions1, print_row);
+    dump_debug_dp();
   }
   void compute_forward() {
     _cur_sc.assign(_sm->nstate0(), 0);
@@ -792,6 +805,39 @@ public:
       // case SM::TR_O_BF: case SM::TR_O_BFL: case SM::TR_O_BFR:break;
     default: Die("bad type %d", t); break;
     }
+  }
+
+  void dump_debug_dp() {
+    if (!_debug_dp_on) return;
+    const IntT state = _debug_dp_state;
+    const IntT i = _debug_dp_i;
+    const IntT j = _debug_dp_j;
+    const IntT layer_in = _sm->layer_in(state, SM::OT_NONE);
+    const IntT layer_out = _sm->layer_out(state, SM::OT_NONE);
+    const ScoreT in = (layer_in >= 0 ? inside_p(layer_in, i, j) : NEG_INF());
+    const ScoreT out = (layer_out >= 0 ? outside_p(layer_out, i, j) : NEG_INF());
+    const auto base_at = [&](IntT seq_idx) -> char {
+      if (seq_idx < 1 || seq_idx > _seqlen) return 'N';
+      return Alpha::ncode_to_char(seq(seq_idx));
+    };
+    const IntT raw_i = i;
+    const IntT raw_j = j - 1;
+    const char base_left = base_at(i + 1);
+    const char base_right = base_at(j);
+    std::fprintf(stderr,
+                 "debug_dp state=%lld dp(i,j)=(%lld,%lld) raw_pair=(%lld,%lld) "
+                 "bases=%c,%c layer_in=%lld layer_out=%lld inside=%e outside=%e\n",
+                 static_cast<long long>(state),
+                 static_cast<long long>(i),
+                 static_cast<long long>(j),
+                 static_cast<long long>(raw_i),
+                 static_cast<long long>(raw_j),
+                 base_left,
+                 base_right,
+                 static_cast<long long>(layer_in),
+                 static_cast<long long>(layer_out),
+                 static_cast<double>(in),
+                 static_cast<double>(out));
   }
   template <typename Fn> void forward_transitions(Fn& f, IntT i, IntT j) {
     f.before_transition(i, j);

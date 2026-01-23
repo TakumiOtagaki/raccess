@@ -4,6 +4,7 @@
 #ifndef RACCESS__RACCESS_HPP
 #define RACCESS__RACCESS_HPP
 #include "util/util.hpp"
+#include <cctype>
 #include "raccess/score_model_energy.hpp"
 #include "raccess/prob_model.hpp"
 namespace Raccess { class Raccess;}
@@ -87,6 +88,7 @@ public:
     _pm.set_length_factor(_length_factor);
     _pm.set_acc_lens(_access_len);
     set_debug_loop_opt();
+    set_debug_dp_opt();
     set_debug_outer_opt();
     set_debug_hairpin_opt();
     set_debug_m2_opt();
@@ -100,6 +102,25 @@ public:
     const vector<IntT>& v = splitvt<IntT>(_debug_loop, ",;:");
     Check(v.size() == 4);
     _pm.set_debug_loop(v[0], v[1], v[2], v[3]);
+  }
+  void set_debug_dp_opt() {
+    if (_debug_dp.empty()) {
+      _pm.clear_debug_dp();
+      return;
+    }
+    const vector<string>& v = splitv(_debug_dp, ",;:");
+    Check(v.size() == 3);
+    string key = v[0];
+    std::transform(key.begin(), key.end(), key.begin(), [](unsigned char c){ return (char)std::tolower(c); });
+    IntT state = (-1);
+    if (key == "stem" || key == "s") state = SM::STEM;
+    else if (key == "stem_end" || key == "stemend" || key == "se") state = SM::STEM_END;
+    else if (key == "inner_beg" || key == "innerbeg" || key == "ib") state = SM::INNER_BEG;
+    else if (key == "outer" || key == "o") state = SM::OUTER;
+    else state = stot<IntT>(key);
+    const IntT i = stot<IntT>(v[1]);
+    const IntT j = stot<IntT>(v[2]);
+    _pm.set_debug_dp(state, i, j);
   }
   void set_debug_m2_opt() {
     if (_debug_m2_pos < 0) {
@@ -195,6 +216,7 @@ public:
   opt_item(bind_range      , string, "none"           , "If set in format 'first:last', then for each segment of accessibility computation, the binding energy between the region [first, last] (in 1-based, inclusive-end, coordinate relative to the segment) with a complementary DNA/RNA fragment is calculated.") \
   opt_item(energy_thr      , double, "100"            , "only output the results below the specified energy threshold (unit: kcal/mol)") \
   opt_item(debug_loop      , string, ""               , "debug TR_E_I loop: outer_i,outer_j,inner_i,inner_j (0-based, closed coords)") \
+  opt_item(debug_dp        , string, ""               , "debug DP cell: state,i,j (state=STEM|STEM_END|INNER_BEG|OUTER or numeric)") \
   opt_item(debug_outer_pos , IntT  , "-1"             , "debug TR_O_O contributions for unpaired intervals covering pos (0-based)") \
   opt_item(debug_hairpin_pos , IntT  , "-1"           , "debug TR_E_H contributions for unpaired intervals covering pos (0-based)") \
   opt_item(debug_m2_pos    , IntT  , "-1"             , "debug TR_M2_M2 transitions for unpaired interval containing pos (0-based)") \
