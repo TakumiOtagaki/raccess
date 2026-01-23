@@ -697,31 +697,38 @@ public:
 	    const IntT unp_e = b + _acc_lens[u] - 1;
 	    const bool pos_match = (unp_b <= _debug_hairpin_pos && _debug_hairpin_pos <= unp_e);
 	    if (pos_match && _debug_hairpin_hits < _debug_hairpin_max_hits) {
+	      const ScoreT sc_hairpin = _sm->score_hairpin(i, j);
+	      const ScoreT energy_hairpin = _sm->score_to_energy(sc_hairpin);
 	      const IntT outer_i = i - 1;
 	      const IntT outer_j = j + 1;
-	      const IntT loop_len = j - i + 1;
+	      const IntT raw_outer_left = i - 1;
+	      const IntT raw_outer_right = j;
+	      const IntT raw_loop_len = j - i;
 	      const bool allow_outer = allow_pair(outer_i, outer_j);
 	      const char base_left_allow = Alpha::ncode_to_char(seq(i));
 	      const char base_right_allow = Alpha::ncode_to_char(seq(j + 1));
 	      const bool canonical_allow = Alpha::is_canonical(seq(i), seq(j + 1));
 	      std::fprintf(stderr,
-	                   "debug_hairpin: pos=%lld unpaired=(%lld,%lld) outer=(%lld,%lld) "
+	                   "debug_hairpin: pos=%lld unpaired=(%lld,%lld) raw_outer=(%lld,%lld) "
 	                   "allow_pair_bases=%c,%c allow_pair=%d canon_allow=%d "
-	                   "dp(i,j,k,l)=(%lld,%lld,%lld,%lld) loop_len=%lld w=%e\n",
+	                   "score_hairpin=%e energy_hairpin=%e "
+	                   "dp(i,j,k,l)=(%lld,%lld,%lld,%lld) raw_loop_len=%lld w=%e\n",
 	                   static_cast<long long>(_debug_hairpin_pos),
 	                   static_cast<long long>(unp_b),
 	                   static_cast<long long>(unp_e),
-	                   static_cast<long long>(outer_i),
-	                   static_cast<long long>(outer_j),
+	                   static_cast<long long>(raw_outer_left),
+	                   static_cast<long long>(raw_outer_right),
 	                   base_left_allow,
 	                   base_right_allow,
 	                   allow_outer ? 1 : 0,
 	                   canonical_allow ? 1 : 0,
+	                   static_cast<double>(sc_hairpin),
+	                   static_cast<double>(energy_hairpin),
 	                   static_cast<long long>(i),
 	                   static_cast<long long>(j),
 	                   static_cast<long long>(k),
 	                   static_cast<long long>(l),
-	                   static_cast<long long>(loop_len),
+	                   static_cast<long long>(raw_loop_len),
 	                   static_cast<double>(w));
 	      _debug_hairpin_hits++;
 	    }
