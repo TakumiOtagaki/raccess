@@ -107,7 +107,7 @@ public:
   // - multi_close uses inner bounds, like hairpin/interior.
   // - multi_open/outer_branch use paired coordinates (pair = (i+1, j) in padded seq).
   ScoreT log_boltz_multi_close_closed(IntT a, IntT b) const {
-    return log_boltz_multi_close(a + 1, b - 1);
+    return log_boltz_multi_close(a, b - 1);
   }
   ScoreT boltz_multi_close_closed(IntT a, IntT b) const {
     return EXP(log_boltz_multi_close_closed(a, b));
