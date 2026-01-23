@@ -390,6 +390,10 @@ public:
   IntT             _debug_outer_pos;
   IntT             _debug_outer_hits;
   IntT             _debug_outer_max_hits;
+  bool             _debug_hairpin_on;
+  IntT             _debug_hairpin_pos;
+  IntT             _debug_hairpin_hits;
+  IntT             _debug_hairpin_max_hits;
   bool             _debug_m2_on;
   IntT             _debug_m2_pos;
   IntT             _debug_m2_hits;
@@ -415,6 +419,8 @@ public:
 		_debug_inner_i(-1), _debug_inner_j(-1), _debug_loop_hits(0),
 		_debug_outer_on(false), _debug_outer_pos(-1), _debug_outer_hits(0),
 		_debug_outer_max_hits(200),
+		_debug_hairpin_on(false), _debug_hairpin_pos(-1),
+		_debug_hairpin_hits(0), _debug_hairpin_max_hits(200),
 		_debug_m2_on(false), _debug_m2_pos(-1), _debug_m2_hits(0),
 		_debug_m2_max_hits(200), _debug_m2_range_on(false),
 		_debug_m2_range_lo(0), _debug_m2_range_hi(0),
@@ -445,6 +451,13 @@ public:
     _debug_outer_max_hits = max_hits;
   }
   void clear_debug_outer() { _debug_outer_on = false; }
+  void set_debug_hairpin_pos(IntT pos, IntT max_hits = 200) {
+    _debug_hairpin_on = true;
+    _debug_hairpin_pos = pos;
+    _debug_hairpin_hits = 0;
+    _debug_hairpin_max_hits = max_hits;
+  }
+  void clear_debug_hairpin() { _debug_hairpin_on = false; }
   void set_debug_m2_pos(IntT pos, IntT max_hits = 200) {
     _debug_m2_on = true;
     _debug_m2_pos = pos;
@@ -679,6 +692,40 @@ public:
       for (IntT b = i; b <= (k - _acc_lmin); ++b) {
 	for (IntT u = 0; u < (IntT)_acc_lens.size() && ((b + _acc_lens[u]) <= k); ++u) { 
 	  prob(b, b + u) += w;
+	  if (_debug_hairpin_on) {
+	    const IntT unp_b = b;
+	    const IntT unp_e = b + _acc_lens[u] - 1;
+	    const bool pos_match = (unp_b <= _debug_hairpin_pos && _debug_hairpin_pos <= unp_e);
+	    if (pos_match && _debug_hairpin_hits < _debug_hairpin_max_hits) {
+	      const IntT outer_i = i - 1;
+	      const IntT outer_j = j + 1;
+	      const IntT loop_len = j - i + 1;
+	      const bool allow_outer = allow_pair(outer_i, outer_j);
+	      const char base_left_allow = Alpha::ncode_to_char(seq(i));
+	      const char base_right_allow = Alpha::ncode_to_char(seq(j + 1));
+	      const bool canonical_allow = Alpha::is_canonical(seq(i), seq(j + 1));
+	      std::fprintf(stderr,
+	                   "debug_hairpin: pos=%lld unpaired=(%lld,%lld) outer=(%lld,%lld) "
+	                   "allow_pair_bases=%c,%c allow_pair=%d canon_allow=%d "
+	                   "dp(i,j,k,l)=(%lld,%lld,%lld,%lld) loop_len=%lld w=%e\n",
+	                   static_cast<long long>(_debug_hairpin_pos),
+	                   static_cast<long long>(unp_b),
+	                   static_cast<long long>(unp_e),
+	                   static_cast<long long>(outer_i),
+	                   static_cast<long long>(outer_j),
+	                   base_left_allow,
+	                   base_right_allow,
+	                   allow_outer ? 1 : 0,
+	                   canonical_allow ? 1 : 0,
+	                   static_cast<long long>(i),
+	                   static_cast<long long>(j),
+	                   static_cast<long long>(k),
+	                   static_cast<long long>(l),
+	                   static_cast<long long>(loop_len),
+	                   static_cast<double>(w));
+	      _debug_hairpin_hits++;
+	    }
+	  }
 	}
       }
       break;
