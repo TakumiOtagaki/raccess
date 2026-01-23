@@ -824,9 +824,15 @@ public:
     const IntT raw_j = j - 1;
     const char base_left = base_at(i + 1);
     const char base_right = base_at(j);
+    const bool has_in = (layer_in >= 0 && in > NEG_INF() / 2);
+    const bool has_out = (layer_out >= 0 && out > NEG_INF() / 2);
+    const double logz = static_cast<double>(_partition_coeff);
+    const double pair_prob = (has_in && has_out)
+      ? std::exp(static_cast<double>(in + out - _partition_coeff))
+      : 0.0;
     std::fprintf(stderr,
                  "debug_dp state=%lld dp(i,j)=(%lld,%lld) raw_pair=(%lld,%lld) "
-                 "bases=%c,%c layer_in=%lld layer_out=%lld inside=%e outside=%e\n",
+                 "bases=%c,%c layer_in=%lld layer_out=%lld inside=%e outside=%e logZ=%e pair_prob=%e\n",
                  static_cast<long long>(state),
                  static_cast<long long>(i),
                  static_cast<long long>(j),
@@ -837,7 +843,9 @@ public:
                  static_cast<long long>(layer_in),
                  static_cast<long long>(layer_out),
                  static_cast<double>(in),
-                 static_cast<double>(out));
+                 static_cast<double>(out),
+                 logz,
+                 pair_prob);
   }
   template <typename Fn> void forward_transitions(Fn& f, IntT i, IntT j) {
     f.before_transition(i, j);
