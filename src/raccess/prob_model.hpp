@@ -659,20 +659,36 @@ public:
                          (_debug_inner_j < 0 || inner_j == _debug_inner_j);
       if (match) {
         if (_debug_loop_hits < 5) {
+          const ScoreT logw = w;
           const IntT li = k - i;
           const IntT lj = j - l;
+          const auto base_at_raw = [&](IntT raw_idx) -> char {
+            if (raw_idx < 0 || raw_idx >= _seqlen) return 'N';
+            return Alpha::ncode_to_char(seq(raw_idx + 1));
+          };
+          const char base_outer_left = base_at_raw(outer_i);
+          const char base_outer_right = base_at_raw(outer_j);
+          const char base_inner_left = base_at_raw(inner_i);
+          const char base_inner_right = base_at_raw(inner_j);
           std::fprintf(stderr,
-                       "debug_loop hit: outer=(%lld,%lld) inner=(%lld,%lld) dp(i,j,k,l)=(%lld,%lld,%lld,%lld) li=%lld lj=%lld\n",
+                       "debug_loop hit: outer=(%lld,%lld) inner=(%lld,%lld) bases outer=%c,%c inner=%c,%c "
+                       "dp(i,j,k,l)=(%lld,%lld,%lld,%lld) li=%lld lj=%lld logw=%e w=%e\n",
                        static_cast<long long>(outer_i),
                        static_cast<long long>(outer_j),
                        static_cast<long long>(inner_i),
                        static_cast<long long>(inner_j),
+                       base_outer_left,
+                       base_outer_right,
+                       base_inner_left,
+                       base_inner_right,
                        static_cast<long long>(i),
                        static_cast<long long>(j),
                        static_cast<long long>(k),
                        static_cast<long long>(l),
                        static_cast<long long>(li),
-                       static_cast<long long>(lj));
+                       static_cast<long long>(lj),
+                       static_cast<double>(logw),
+                       static_cast<double>(std::exp(logw)));
         }
         _debug_loop_hits++;
       }
