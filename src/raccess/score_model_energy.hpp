@@ -18,7 +18,6 @@ public:
   static ScoreT TEMPERATURE_K() { return (TEMPERATURE_K0() + 37.0);}
   static ScoreT RT_KCAL_MOL(ScoreT temperature_k) { return GAS_CONST_KCAL_MOL_K() * temperature_k;}
   static ScoreT RT_KCAL_MOL() { return GAS_CONST_KCAL_MOL_K() * TEMPERATURE_K();} // =0.61633008
-  static constexpr ScoreT debug_kHairpinScale = 2.0;
   typedef Alpha::CodeT CodeT;
   typedef Alpha::Codes Seq;
   typedef vector<IntT> VI;
@@ -1066,7 +1065,7 @@ public:
       sc += TENSOR(hairpinloop_cumu_change).ref(MAXLOOP) ;
       sc += log(l / (ScoreT)MAXLOOP) * TENSOR(large_loop_factor).ref();
     }
-    return sc * debug_kHairpinScale;
+    return sc;
   }
   ScoreT score_hairpin_enthalpy(IntT i, IntT j) {
     IntT l = (j-i);
