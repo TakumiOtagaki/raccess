@@ -81,7 +81,6 @@ public:
   }
   void init_model() { // should call for each setting
     _sm.initialize();
-    std::fprintf(stderr, "debug_length_factor=%g\n", _length_factor);
     _sm.set_param("external_unpaired"            , _length_factor);
     _sm.set_param("external_paired_length_factor", _length_factor);
     _pm.set_score_model(_sm);
